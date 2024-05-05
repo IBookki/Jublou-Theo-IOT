@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character</title>
+    <link rel="stylesheet" href="style.css"> 
+</head>
+
+<body>
+
+    <section class="top-page">
+        <header class="header">
+            <nav class="nav"> 
+                    <li><a href="hp.html">Accueil</a></li>
+                    <li><a href="account.html">Mon Compte</a></li>
+            </nav>
+        </header>
+
+    <div id="characters"></div>
+
+    <div id="character-details" class="hidden"></div>
+
+    <script>
+
+async function getMyId(){
+    const token = localStorage.getItem("token");
+    console.log(token);
+
+    const response = await fetch("http://localhost:3000/getMyProfile", {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (response.status == 200) {
+        const data = await response.json();
+        return data.id;
+    }
+}
+
+function UpdateLastHouse(id, house) {
+    let baseUrl = "http://localhost:3000/users/" + id
+    console.log(id);
+    console.log(house);
+    return fetch(baseUrl, {
+        method: "PUT",
+        body: JSON.stringify({
+            house: house,
+        }),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    })
+}
+
+
+async function UpdateHouse(house) {
+    try {
+        await UpdateLastHouse(await getMyId(), house);
+    }
+    catch {
+        console.log("You're not connected");
+    }
+}
+
+
+        function fetchCharacters(){
+            return fetch('https://hp-api.lainocs.fr/characters')
+            .then((response) => response.json())
+        }
+
+        async function displayCharacters(){
+            const data = await fetchCharacters()    
+            data.forEach(character => {
+                document.querySelector('#characters').innerHTML +=`
+                <div class="card" data-name="${character.name}" data-house="${character.house}" data-actor="${character.actor}">
+                    <img src="${character.image}" alt="${character.name}">
+                </div>
+            `
+            });  
+            
+            attachEventListeners();
+        }
+
+        function attachEventListeners() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('click', (event) => {
+
+                    event.preventDefault();
+                    
+                    const name = card.dataset.name;
+                    const house = card.dataset.house;
+                    const actor = card.dataset.actor;
+
+                    const detailsContainer = document.querySelector('#character-details');
+                    detailsContainer.innerHTML = `
+                        <h2>${name}</h2>
+                        <p><strong>House:</strong> ${house}</p>
+                        <p><strong>Actor:</strong> ${actor}</p>
+                    `;
+
+                    detailsContainer.classList.remove('hidden');
+                    UpdateHouse(house);
+                });
+            });
+        }
+        document.querySelector('#character-details').addEventListener('click', (event) => {
+            const detailsContainer = document.querySelector('#character-details');
+            detailsContainer.classList.add('hidden');
+        });
+
+        displayCharacters();
+    </script>
+</body> 
+<footer>
+    <p>@2024 Harry Potter Trading Cards Game</p>
+</footer>
+</html>
